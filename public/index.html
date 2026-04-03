@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inégalités Mondiales — Dashboard Interactif</title>
+  <meta name="description" content="Une exploration visuelle de l'évolution des richesses et inégalités mondiales de 1980 à 2024. Par GOUBGOU Yamba Arsène & MOHAMMAD Faruk Ahmed Riyan.">
+  <meta name="author" content="GOUBGOU Yamba Arsène & MOHAMMAD Faruk Ahmed Riyan">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+</head>
+<body>
+  <!-- ═══ THEME TOGGLE ═══ -->
+  <button id="themeToggle" class="theme-toggle" aria-label="Changer de thème">
+    <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+    <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+  </button>
+
+  <!-- ═══ FILTER PANEL ═══ -->
+  <aside id="filterPanel" class="filter-panel">
+    <div class="filter-header">
+      <h3>Filtres</h3>
+      <button id="toggleFilters" class="filter-toggle" aria-label="Toggle filters">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="filter-content">
+      <!-- Group Toggles -->
+      <div class="filter-group">
+        <label class="filter-label">Groupes</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-group="1">
+            <span class="toggle-dot" style="background:#3b82f6"></span>
+            G7
+          </button>
+          <button class="toggle-btn active" data-group="2">
+            <span class="toggle-dot" style="background:#ef4444"></span>
+            BRICS
+          </button>
+          <button class="toggle-btn active" data-group="3">
+            <span class="toggle-dot" style="background:#22c55e"></span>
+            Autres
+          </button>
+        </div>
+      </div>
+
+      <!-- Country Multi-Select -->
+      <div class="filter-group">
+        <label class="filter-label">
+          <span>Pays</span>
+          <button id="clearCountries" class="clear-btn" title="Effacer la sélection">Effacer</button>
+        </label>
+        <div class="country-select">
+          <input type="text" id="countrySearch" class="country-search" placeholder="Rechercher un pays...">
+          <div id="countryDropdown" class="country-dropdown"></div>
+        </div>
+        <div id="selectedCountries" class="selected-countries"></div>
+      </div>
+
+      <!-- Animation Controls -->
+      <div class="filter-group">
+        <label class="filter-label">
+          <span>Animation</span>
+          <span id="yearValue" class="filter-value">1980</span>
+        </label>
+        <input type="range" id="yearSlider" class="slider" min="1980" max="2024" value="1980">
+        <div class="slider-labels">
+          <span>1980</span>
+          <span>2024</span>
+        </div>
+        <div class="speed-controls">
+          <label class="speed-label">Vitesse:</label>
+          <select id="speedSelect" class="select-input small">
+            <option value="1000">Lente</option>
+            <option value="500" selected>Normale</option>
+            <option value="250">Rapide</option>
+            <option value="100">Très rapide</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ INSIGHT PANEL ═══ -->
+  <aside id="insightPanel" class="insight-panel">
+    <div class="insight-header">
+      <h3>Statistiques</h3>
+    </div>
+    <div id="insightContent" class="insight-content">
+      <div class="insight-card">
+        <div class="insight-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path>
+          </svg>
+        </div>
+        <div class="insight-data">
+          <span class="insight-label">PIB le plus élevé</span>
+          <span id="insightHighGDP" class="insight-value">—</span>
+        </div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon warning">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="insight-data">
+          <span class="insight-label">Gini le plus élevé</span>
+          <span id="insightHighGini" class="insight-value">—</span>
+        </div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon success">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="insight-data">
+          <span class="insight-label">Gini le plus bas</span>
+          <span id="insightLowGini" class="insight-value">—</span>
+        </div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <div class="insight-data">
+          <span class="insight-label">Gini moyen</span>
+          <span id="insightAvgGini" class="insight-value">—</span>
+        </div>
+      </div>
+      <div class="insight-divider"></div>
+      <div class="insight-groups">
+        <div class="insight-group-stat" data-group="1">
+          <span class="group-dot" style="background:#3b82f6"></span>
+          <span class="group-name">G7</span>
+          <span id="g7Gini" class="group-value">—</span>
+        </div>
+        <div class="insight-group-stat" data-group="2">
+          <span class="group-dot" style="background:#ef4444"></span>
+          <span class="group-name">BRICS</span>
+          <span id="bricsGini" class="group-value">—</span>
+        </div>
+        <div class="insight-group-stat" data-group="3">
+          <span class="group-dot" style="background:#22c55e"></span>
+          <span class="group-name">Autres</span>
+          <span id="autresGini" class="group-value">—</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ TOOLTIP ═══ -->
+  <div id="tooltip" class="tooltip"></div>
+
+  <!-- ═══ HERO SECTION ═══ -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">Data Storytelling Project</div>
+      <h1>Inégalités Mondiales</h1>
+      <p class="hero-subtitle">Une exploration visuelle de l'évolution des richesses à travers le monde</p>
+      <div class="hero-year-container">
+        <span class="hero-year-label">De 1980 à</span>
+        <span id="heroYear" class="hero-year">1980</span>
+      </div>
+      <div class="scroll-indicator">
+        <span>Faites défiler pour explorer</span>
+        <div class="scroll-arrow"></div>
+      </div>
+    </div>
+    <div class="hero-authors">
+      <span>Par</span>
+      <strong>GOUBGOU Yamba Arsène</strong>
+      <span>&</span>
+      <strong>MOHAMMAD Faruk Ahmed Riyan</strong>
+    </div>
+  </section>
+
+  <!-- ═══ DASHBOARD SECTION ═══ -->
+  <section class="dashboard-section">
+    <div class="dashboard-header">
+      <h2>Dashboard Interactif</h2>
+      <p>Explorez les données en utilisant les filtres et contrôles d'animation</p>
+      <div class="play-controls">
+        <button id="playBtn" class="play-btn" aria-label="Play animation">
+          <svg id="playIcon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5,3 19,12 5,21"></polygon>
+          </svg>
+          <svg id="pauseIcon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+        </button>
+        <span id="playYear" class="play-year">1980</span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Scatter Plot -->
+      <div class="chart-card chart-large">
+        <div class="chart-header">
+          <h3>Scatter Plot — PIB vs Gini</h3>
+          <span class="chart-subtitle">Style Gapminder</span>
+        </div>
+        <div class="chart-container">
+          <svg id="scatterViz"></svg>
+        </div>
+      </div>
+
+      <!-- World Map -->
+      <div class="chart-card chart-large">
+        <div class="chart-header">
+          <h3>Carte Mondiale</h3>
+          <span class="chart-subtitle">Taille = Population, Couleur = Gini</span>
+        </div>
+        <div class="chart-container" id="mapContainer">
+          <svg id="mapViz"></svg>
+        </div>
+      </div>
+
+      <!-- Trajectory Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Trajectoires</h3>
+          <span class="chart-subtitle">Évolution du Gini par pays</span>
+        </div>
+        <div class="chart-container">
+          <svg id="trajectoryViz"></svg>
+        </div>
+      </div>
+
+      <!-- Ranking Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Classement Inégalités</h3>
+          <span class="chart-subtitle">Top 10 — Indice de Gini</span>
+        </div>
+        <div class="chart-container">
+          <svg id="rankingViz"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="dashboard-legend">
+      <div class="legend-item" data-group="1">
+        <span class="legend-color" style="background:#3b82f6"></span>
+        <span>G7</span>
+      </div>
+      <div class="legend-item" data-group="2">
+        <span class="legend-color" style="background:#ef4444"></span>
+        <span>BRICS</span>
+      </div>
+      <div class="legend-item" data-group="3">
+        <span class="legend-color" style="background:#22c55e"></span>
+        <span>Autres</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SCROLLYTELLING SECTION ═══ -->
+  <section class="scrolly-section">
+    <h2 class="scrolly-title">L'Histoire des Inégalités</h2>
+    
+    <div class="scrolly-container">
+      <div class="sticky-viz">
+        <div id="storyYearBg" class="viz-year-bg">1980</div>
+        <svg id="storyViz"></svg>
+      </div>
+
+      <div class="steps">
+        <article class="step" data-step="intro">
+          <div class="step-number">01</div>
+          <h3>1980 : Le Point de Départ</h3>
+          <p>Au début des années 80, le monde était clairement divisé entre économies développées et pays en développement.</p>
+          <p class="step-takeaway">Les pays du G7 dominent en PIB, mais les inégalités varient fortement entre eux.</p>
+          <p class="step-detail">Les États-Unis affichent déjà un Gini de 0.35, tandis que le Japon reste autour de 0.30. Les BRICS sont encore des économies principalement agricoles.</p>
+        </article>
+
+        <article class="step" data-step="fall-ussr">
+          <div class="step-number">02</div>
+          <h3>1991 : Chute de l'URSS</h3>
+          <p>L'effondrement de l'Union soviétique transforme radicalement les économies de l'Est.</p>
+          <p class="step-takeaway">La Russie voit ses inégalités exploser de 0.24 à 0.40 en moins d'une décennie.</p>
+          <p class="step-detail">La transition vers l'économie de marché et les privatisations créent une nouvelle classe d'oligarques.</p>
+        </article>
+
+        <article class="step" data-step="china-wto">
+          <div class="step-number">03</div>
+          <h3>2001 : La Chine entre à l'OMC</h3>
+          <p>L'adhésion de la Chine à l'Organisation mondiale du commerce marque un tournant dans la mondialisation.</p>
+          <p class="step-takeaway">Le PIB chinois est multiplié par 15 entre 2001 et 2024, mais le Gini passe de 0.32 à 0.50.</p>
+          <p class="step-detail">La croissance spectaculaire s'accompagne d'un creusement des écarts entre zones côtières et intérieures.</p>
+        </article>
+
+        <article class="step" data-step="crisis-2008">
+          <div class="step-number">04</div>
+          <h3>2008 : Crise Financière Mondiale</h3>
+          <p>La crise des subprimes frappe durement les économies développées.</p>
+          <p class="step-takeaway">Paradoxalement, les inégalités continuent d'augmenter dans les pays riches après la crise.</p>
+          <p class="step-detail">Aux États-Unis, le Gini atteint 0.46 en 2010 — un niveau historique depuis la Grande Dépression.</p>
+        </article>
+
+        <article class="step" data-step="covid">
+          <div class="step-number">05</div>
+          <h3>2020 : Pandémie COVID-19</h3>
+          <p>La pandémie révèle et amplifie les inégalités existantes.</p>
+          <p class="step-takeaway">Les plus vulnérables sont les plus touchés, creusant encore les écarts de richesse.</p>
+          <p class="step-detail">L'Afrique du Sud atteint un Gini record de 0.72, le plus élevé au monde.</p>
+        </article>
+
+        <article class="step" data-step="today">
+          <div class="step-number">06</div>
+          <h3>2024 : État des Lieux</h3>
+          <p>Où en sommes-nous aujourd'hui ?</p>
+          <p class="step-takeaway">Les inégalités mondiales ont globalement augmenté, mais avec des trajectoires très différentes selon les pays.</p>
+          <p class="step-detail">L'Éthiopie et la Tanzanie montrent que croissance et réduction des inégalités peuvent coexister.</p>
+        </article>
+
+        <article class="step step-conclusion" data-step="conclusion">
+          <div class="step-number">07</div>
+          <h3>Conclusion</h3>
+          <p>Les inégalités sont le résultat de choix politiques, économiques et sociaux.</p>
+          <p class="step-takeaway">Chaque pays trace sa propre voie — il n'y a pas de fatalité.</p>
+          <p class="step-detail">Cette visualisation n'est qu'un aperçu. Les données révèlent une réalité encore plus nuancée.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-main">
+        <p class="footer-title">Data Storytelling Project</p>
+        <p class="footer-authors">GOUBGOU Yamba Arsène & MOHAMMAD Faruk Ahmed Riyan</p>
+        <p class="footer-subtitle">ENSAE Paris — 2026</p>
+      </div>
+      <div class="footer-sources">
+        <p>Sources : World Bank, World Inequality Database</p>
+        <p>Technologies : D3.js v7, TopoJSON</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══ SCRIPTS ═══ -->
+  <script src="js/state.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/charts/scatter.js"></script>
+  <script src="js/charts/map.js"></script>
+  <script src="js/charts/trajectory.js"></script>
+  <script src="js/charts/ranking.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
