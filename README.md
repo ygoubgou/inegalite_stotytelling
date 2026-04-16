@@ -2,7 +2,7 @@
 
 Une exploration visuelle de l'évolution des richesses et inégalités à travers le monde de 1980 à 2024.
 
-**Auteurs : GOUBGOU Yamba Arsène & MOHAMMED Faruk Ahmed Riyan**  
+**Auteurs : GOUBGOU Yamba Arsène & MOHAMMAD FARUK AHMED Riyan**  
 *Projet de visualisation de données — data storytelling*
 
 ---
@@ -114,7 +114,7 @@ Le fichier `combined_data.csv` doit contenir les colonnes suivantes :
 
 ## Contact
 
-**GOUBGOU Yamba Arsène & MOHAMMAD Faruk Ahmed Riyan**  
+**GOUBGOU Yamba Arsène & MOHAMMAD FARUK AHMED Riyan**  
 Projet réalisé dans le cadre du cours de data storytelling à l'ENSAE
 
 ---
